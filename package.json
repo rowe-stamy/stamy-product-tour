@@ -2,14 +2,18 @@
   "name": "stamy-product-tour",
   "version": "0.0.1",
   "description": "A simple javascript library to create interactive user tutorials and product tours.\r The library has a dependency on rjxs, but rather than that it can be used on any website or with any js framework.",
-  "main": "index.js",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
     "test": "jest",
     "build": "tsc",
-    "format": "",
+    "format": "yarn prettier --write \"src/**/*.ts\"",
+    "lint": "yarn eslint -c .eslintrc.json",
     "prepare": "yarn run build",
     "prepublishOnly": "yarn test",
-    "preversion": "yarn eslint -c .eslintrc.json"
+    "preversion": "yarn lint",
+    "version": "yarn run format && git add -A src",
+    "postversion": "git push && git push --tags"
   },
   "repository": {
     "type": "git",
@@ -19,8 +23,8 @@
     "product tour",
     "user tutorials"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "Roman Weis",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/rowe-stamy/stamy-product-tour/issues"
   },
