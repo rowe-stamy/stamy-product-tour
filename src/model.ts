@@ -24,7 +24,7 @@ export interface ProductTourAction {
   type: ProductTourActionType;
 }
 
-// language lookup e.g. {'en': 'hi'}
+// language lookup e.g. {'en': 'hello world'}
 export type ProductTourStepDescription = { [key in string]: string };
 
 export type ProductTourStepDefinition = {
@@ -39,7 +39,7 @@ export type ProductTourStepDefinition = {
 
 export type ProductTour = {
   definitions: ProductTourStepDefinition[];
-  scrollContainerClassName: string;
+  scrollContainerClassName?: string;
   cleanUp?: () => void;
 };
 

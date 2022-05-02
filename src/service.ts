@@ -177,7 +177,7 @@ export const removeHighlightElement = (step: string | null) => {
 
 export const attachElement = (
   step: string,
-  scrollContainerClassName: string,
+  scrollContainerClassName?: string,
   attachmentFunctions?: AttachmentFunctions
 ) => {
   if (!step || !attachmentFunctions) {
@@ -190,17 +190,17 @@ export const attachElement = (
   if (attachmentFunc.isAttached) {
     return;
   }
-  attachmentFunc.isAttached = true;
-  const el = document.getElementsByClassName(scrollContainerClassName)[0];
+  const el = scrollContainerClassName ? document.getElementsByClassName(scrollContainerClassName)[0] : window;
   if (!el) {
     return;
   }
+  attachmentFunc.isAttached = true;
   el.addEventListener('scroll', attachmentFunc?.handler);
 };
 
 export const dettachElement = (
   step: string | null,
-  scrollContainerClassName: string,
+  scrollContainerClassName?: string,
   attachmentFunctions?: AttachmentFunctions
 ) => {
   if (!step || !attachmentFunctions) {
@@ -210,7 +210,7 @@ export const dettachElement = (
   if (!attachmentFunc) {
     return;
   }
-  const el = document.getElementsByClassName(scrollContainerClassName)[0];
+  const el = scrollContainerClassName ? document.getElementsByClassName(scrollContainerClassName)[0] : window;
   if (!el) {
     return;
   }
