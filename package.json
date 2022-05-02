@@ -13,7 +13,10 @@
     "type": "git",
     "url": "git+https://github.com/rowe-stamy/stamy-product-tour.git"
   },
-  "keywords": [],
+  "keywords": [
+    "product tour",
+    "user tutorials"
+  ],
   "author": "",
   "license": "ISC",
   "bugs": {
