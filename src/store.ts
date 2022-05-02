@@ -11,27 +11,21 @@ import {
   getPrevStep,
   removeHighlightElement,
   waitForElement
-} from './product-tour.behavior';
+} from './service';
 import {
   CreateProductTours,
   intitialProductTourState,
   ProductTourAction,
   ProductTourActionType,
   ProductTourState,
-  ProductTourStore,
   StartProductTour
-} from './product-tour.data';
+} from './model';
 
-const filterChanged = <T>(initialValue: T): UnaryFunction<Observable<T>, Observable<T>> =>
-  pipe(
-    startWith(initialValue),
-    pairwise(),
-    filter(([p, c]) => p !== c),
-    map(([, c]) => c)
-  );
-
+// the reducers are not pure since side effects on the dom are created and also can change the results6
+// our state is not the single source of truth, but only a part of the truth, the other part is in the dom state
+// we accept this trade-off in order to keep the solution simple
 const reducers: {
-  [key in ProductTourActionType]: (state: ProductTourState, action: ProductTourAction) => ProductTourState;
+  [key in ProductTourActionType]: (state: ProductTourState, action: any) => ProductTourState;
 } = {
   InitialAction: (state, action) => state,
   CreateProductTours: (state, action: CreateProductTours) => {
@@ -59,7 +53,7 @@ const reducers: {
     };
   },
   ProductTourStepIsReady: state => {
-    if (!state.currentStep) {
+    if (!state.currentStep || !state.scenario) {
       return state;
     }
     removeHighlightElement(state.lastStep);
@@ -85,6 +79,8 @@ const reducers: {
     }
 
     if (currentDefinition.awaitedElementId) {
+      // schedule waiting for the element to appear in the dom
+      // the callback fires an action to rerun the reducers
       waitForElement(currentDefinition.awaitedElementId, () =>
         productTourStore.dispatch({ type: 'CheckCanContinueProductTour' })
       );
@@ -96,6 +92,9 @@ const reducers: {
     return state;
   },
   SetProductTourNextStep: state => {
+    if (!state.scenario) {
+      return state;
+    }
     const productTour = state.productTours[state.scenario];
     const nextStep = getNextStep(productTour.definitions, state.currentStepIndex);
     const currentStepIndex = nextStep == null ? 0 : state.currentStepIndex + 1;
@@ -113,6 +112,9 @@ const reducers: {
     };
   },
   SetProductTourPrevStep: state => {
+    if (!state.scenario) {
+      return state;
+    }
     const productTour = state.productTours[state.scenario];
     const nextStep = getPrevStep(productTour.definitions, state.currentStepIndex);
     const currentStepIndex = nextStep == null ? 0 : state.currentStepIndex - 1;
@@ -130,6 +132,9 @@ const reducers: {
     };
   },
   CancelProductTour: state => {
+    if (!state.scenario) {
+      return state;
+    }
     const productTour = state.productTours[state.scenario];
     if (productTour.cleanUp) {
       productTour.cleanUp();
@@ -153,6 +158,9 @@ const reducers: {
     };
   },
   CheckCanContinueProductTour: state => {
+    if (!state.scenario) {
+      return state;
+    }
     const productTour = state.productTours[state.scenario];
     return {
       ...state,
@@ -161,42 +169,34 @@ const reducers: {
   }
 };
 
+const filterChanged = <T>(initialValue: T): UnaryFunction<Observable<T>, Observable<T>> =>
+  pipe(
+    startWith(initialValue),
+    pairwise(),
+    filter(([p, c]) => p !== c),
+    map(([, c]) => c)
+  );
+
 type ProductStoreWrapper = {
   state: ProductTourState;
-  subject: Subject<ProductTourStore>;
-  latestStore: { state: ProductTourState; action: ProductTourAction };
+  subject: Subject<ProductTourState>;
+  actionSubject: Subject<ProductTourAction>;
   dispatch: (action: ProductTourAction) => void;
   select: { state$: () => Observable<ProductTourState>; actions$: () => Observable<ProductTourAction> };
 };
 
 export const productTourStore: ProductStoreWrapper = {
-  subject: new Subject<ProductTourStore>(),
+  subject: new Subject<ProductTourState>(),
+  actionSubject: new Subject<ProductTourAction>(),
   state: intitialProductTourState,
-  latestStore: {
-    state: intitialProductTourState,
-    action: {
-      type: 'InitialAction'
-    }
-  },
-
   dispatch: (action: ProductTourAction) => {
     productTourStore.state = reducers[action.type](productTourStore.state, action);
-    productTourStore.latestStore = {
-      state: productTourStore.state,
-      action
-    };
-    productTourStore.subject.next({
-      state: productTourStore.state,
-      action
-    });
+    productTourStore.subject.next(productTourStore.state);
+    productTourStore.actionSubject.next(action);
   },
   select: {
-    actions$: (): Observable<ProductTourAction> => productTourStore.subject.pipe(map(s => s.action)),
+    actions$: (): Observable<ProductTourAction> => productTourStore.actionSubject,
     state$: (): Observable<ProductTourState> =>
-      productTourStore.subject.pipe(
-        startWith(productTourStore.latestStore),
-        map(s => s.state),
-        filterChanged(intitialProductTourState)
-      )
+      productTourStore.subject.pipe(startWith(productTourStore.state), filterChanged(intitialProductTourState))
   }
 };

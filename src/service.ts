@@ -1,6 +1,6 @@
-import { ProductStepPosition, ProductTour, TourStepXPos, TourStepYPos } from './product-tour.data';
+import { AttachmentFunctions, ProductStepPosition, ProductTour, TourStepXPos, TourStepYPos } from './model';
 
-const calculateXPos = (
+export const calculateXPos = (
   rectTarget: { left: number; right: number },
   rectTourStep: { width: number },
   xPos: TourStepXPos,
@@ -20,7 +20,7 @@ const calculateXPos = (
   }
 };
 
-const calculateYPos = (
+export const calculateYPos = (
   rectTarget: { top: number; bottom: number },
   rectTourStep: { height: number },
   yPos: TourStepYPos,
@@ -28,7 +28,7 @@ const calculateYPos = (
 ): number => {
   switch (yPos) {
     case 'innerTop':
-      return rectTarget.top - padding;
+      return rectTarget.top + padding;
     case 'innerBottom':
       return rectTarget.bottom - rectTourStep.height - padding;
     case 'outerTop':
@@ -40,7 +40,43 @@ const calculateYPos = (
   }
 };
 
-const placeTourStep = (step: string, pos: ProductStepPosition) => {
+export const calculateBestXPos = (constaints: {
+  minWidth: number;
+  marginLeft: number;
+  marginRight: number;
+}): TourStepXPos => {
+  const { minWidth, marginLeft, marginRight } = constaints;
+  if (minWidth < marginLeft && minWidth < marginRight) {
+    return 'outerLeft';
+  } else if (minWidth < marginLeft && minWidth >= marginRight) {
+    return 'outerLeft';
+  } else if (minWidth >= marginLeft && minWidth < marginRight) {
+    return 'outerRight';
+  } else if (minWidth >= marginLeft && minWidth >= marginRight) {
+    return 'innerLeft';
+  }
+  return 'outerLeft';
+};
+
+export const calculateBestYPos = (constaints: {
+  minHeight: number;
+  marginBottom: number;
+  marginTop: number;
+}): TourStepYPos => {
+  const { minHeight, marginBottom, marginTop } = constaints;
+  if (minHeight < marginBottom && minHeight < marginTop) {
+    return 'innerTop';
+  } else if (minHeight < marginBottom && minHeight >= marginTop) {
+    return 'outerBottom';
+  } else if (minHeight >= marginBottom && minHeight < marginTop) {
+    return 'outerTop';
+  } else if (minHeight >= marginBottom && minHeight >= marginTop) {
+    return 'outerTop';
+  }
+  return 'innerTop';
+};
+
+export const placeTourStep = (step: string, pos: ProductStepPosition) => {
   const tourStep = document.getElementById('tourStep');
   const target = document.getElementById(step);
   if (!tourStep || !target) {
@@ -54,7 +90,7 @@ const placeTourStep = (step: string, pos: ProductStepPosition) => {
   tourStep.style.top = calculateYPos(rectTarget, rectTourStep, pos.y, paddingY) + 'px';
 };
 
-const placeTourStepBest = (step: string, padding: number) => {
+export const placeTourStepBest = (step: string, padding: number) => {
   const tourStep = document.getElementById('tourStep');
   const target = document.getElementById(step);
   if (!tourStep || !target) {
@@ -68,29 +104,8 @@ const placeTourStepBest = (step: string, padding: number) => {
   const marginTop = rectTarget.top - window.innerHeight;
   const minWidth = rectStep.width + padding;
   const minHeight = rectStep.height + padding;
-  let xPos: TourStepXPos = 'outerLeft';
-  let yPos: TourStepYPos = 'outerBottom';
-
-  if (minWidth < marginLeft && minWidth < marginRight) {
-    xPos = 'outerLeft';
-  } else if (minWidth < marginLeft && minWidth >= marginRight) {
-    xPos = 'outerLeft';
-  } else if (minWidth >= marginLeft && minWidth < marginRight) {
-    xPos = 'outerRight';
-  } else if (minWidth >= marginLeft && minWidth >= marginRight) {
-    xPos = 'innerLeft';
-  }
-
-  if (minHeight < marginBottom && minHeight < marginTop) {
-    yPos = 'innerTop';
-  } else if (minHeight < marginBottom && minHeight >= marginTop) {
-    yPos = 'outerBottom';
-  } else if (minHeight >= marginBottom && minHeight < marginTop) {
-    yPos = 'outerTop';
-  } else if (minHeight >= marginBottom && minHeight >= marginTop) {
-    yPos = 'outerTop';
-  }
-
+  const xPos = calculateBestXPos({ minWidth, marginLeft, marginRight });
+  const yPos = calculateBestYPos({ minHeight, marginBottom, marginTop });
   placeTourStep(step, { x: xPos, y: yPos, padding });
 };
 
@@ -138,7 +153,10 @@ export const waitForElement = (step: string, callback: () => void) => {
   });
 };
 
-export const addHighlightElement = (step: string) => {
+export const addHighlightElement = (step: string | null) => {
+  if (!step) {
+    return;
+  }
   const el = document.getElementById(step);
   if (!el) {
     return;
@@ -146,7 +164,10 @@ export const addHighlightElement = (step: string) => {
   el.classList.add('highlight-tour-step');
 };
 
-export const removeHighlightElement = (step: string) => {
+export const removeHighlightElement = (step: string | null) => {
+  if (!step) {
+    return;
+  }
   const el = document.getElementById(step);
   if (!el) {
     return;
@@ -157,49 +178,49 @@ export const removeHighlightElement = (step: string) => {
 export const attachElement = (
   step: string,
   scrollContainerClassName: string,
-  attachmentFunctions: {
-    [key in string]: {
-      handler: () => void;
-      isAttached: boolean;
-    };
-  }
+  attachmentFunctions?: AttachmentFunctions
 ) => {
-  if (!step) {
+  if (!step || !attachmentFunctions) {
     return;
   }
-  if (!attachmentFunctions[step]) {
+  const attachmentFunc = attachmentFunctions[step];
+  if (!attachmentFunc) {
     return;
   }
-  if (attachmentFunctions[step].isAttached) {
+  if (attachmentFunc.isAttached) {
     return;
   }
-  attachmentFunctions[step].isAttached = true;
+  attachmentFunc.isAttached = true;
   const el = document.getElementsByClassName(scrollContainerClassName)[0];
   if (!el) {
     return;
   }
-  el.addEventListener('scroll', attachmentFunctions[step]?.handler);
+  el.addEventListener('scroll', attachmentFunc?.handler);
 };
 
 export const dettachElement = (
-  step: string,
+  step: string | null,
   scrollContainerClassName: string,
-  attachmentFunctions: {
-    [key in string]: {
-      handler: () => void;
-      isAttached: boolean;
-    };
-  }
+  attachmentFunctions?: AttachmentFunctions
 ) => {
+  if (!step || !attachmentFunctions) {
+    return;
+  }
+  const attachmentFunc = attachmentFunctions[step];
+  if (!attachmentFunc) {
+    return;
+  }
   const el = document.getElementsByClassName(scrollContainerClassName)[0];
   if (!el) {
     return;
   }
-  el.removeEventListener('scroll', attachmentFunctions[step]?.handler);
+  el.removeEventListener('scroll', attachmentFunc?.handler);
 };
 
-export const buildAttachmentFunctions = (definitions: { step: string; pos?: ProductStepPosition }[]) => {
-  const cp = {};
+export const buildAttachmentFunctions = (
+  definitions: { step: string; pos?: ProductStepPosition }[]
+): AttachmentFunctions => {
+  const cp: AttachmentFunctions = {};
   definitions.reduce((p, c) => {
     cp[c.step] = {
       handler: () => adjustToScrollPosition(c.step, c.pos),
@@ -244,8 +265,9 @@ export const canContinue = (scenario: ProductTour, currentStepIndex: number): bo
   if (!el) {
     return false;
   }
-  if (scenario.definitions[currentStepIndex].canProceed) {
-    return scenario.definitions[currentStepIndex].canProceed();
+  const definition = scenario.definitions[currentStepIndex];
+  if (definition?.canProceed) {
+    return definition.canProceed();
   }
   return !!el;
 };

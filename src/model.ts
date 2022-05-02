@@ -24,6 +24,7 @@ export interface ProductTourAction {
   type: ProductTourActionType;
 }
 
+// language lookup e.g. {'en': 'hi'}
 export type ProductTourStepDescription = { [key in string]: string };
 
 export type ProductTourStepDefinition = {
@@ -55,20 +56,21 @@ export type SetProductTourPrevStep = ProductTourAction;
 export type CancelProductTour = ProductTourAction;
 export type CheckCanContinueProductTour = ProductTourAction;
 
+export type AttachmentFunctions = {
+  [key in string]?: {
+    handler: () => void;
+    isAttached: boolean;
+  };
+};
 export interface ProductTourState {
-  scenario: string;
+  scenario: string | null;
   lastStep: string | null;
   lastStepIndex: number;
   currentStep: string | null;
   currentStepIndex: number;
   canContinue: boolean;
-  attachmentFunctions: { [key in string]?: { handler: () => void; isAttached: boolean } };
+  attachmentFunctions: AttachmentFunctions;
   productTours: { [key in string]: ProductTour };
-}
-
-export interface ProductTourStore {
-  state: ProductTourState;
-  action: ProductTourAction;
 }
 
 export const intitialProductTourState: ProductTourState = {

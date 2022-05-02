@@ -4,7 +4,7 @@
   "description": "A simple javascript library to create interactive user tutorials and product tours.\r The library has a dependency on rjxs, but rather than that it can be used on any website or with any js framework.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "build": "tsc"
   },
   "repository": {
@@ -19,6 +19,18 @@
   },
   "homepage": "https://github.com/rowe-stamy/stamy-product-tour#readme",
   "devDependencies": {
+    "@types/jest": "^27.4.1",
+    "@types/jsdom": "^16.2.14",
+    "eslint": "^8.14.0",
+    "jest": "27.2.3",
+    "jsdom": "^19.0.0",
+    "ts-jest": "27.0.5",
     "typescript": "^4.6.4"
-  }
+  },
+  "dependencies": {
+    "rxjs": "^6.6.7"
+  },
+  "files": [
+    "lib/**/*"
+  ]
 }
