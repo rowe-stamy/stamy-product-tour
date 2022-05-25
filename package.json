@@ -1,6 +1,6 @@
 {
   "name": "stamy-product-tour",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "description": "A simple javascript library to create interactive user tutorials and product tours.\r The library has a dependency on rjxs, but rather than that it can be used on any website or with any js framework.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
